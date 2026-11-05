@@ -1,271 +1,88 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>JobPay Agent — PayPal AI Hackathon</title>
-  <style>
-    :root {
-      --bg: #0b1220;
-      --panel: #121a2b;
-      --border: #243049;
-      --text: #e8eefc;
-      --muted: #8fa3c4;
-      --accent: #0070ba;
-      --accent2: #003087;
-      --ok: #22c55e;
-      --warn: #f59e0b;
-      --user: #1e3a5f;
-      --bot: #162033;
-    }
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      min-height: 100vh;
-      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-      background: radial-gradient(1200px 600px at 10% -10%, #14305a 0%, transparent 50%),
-                  radial-gradient(900px 500px at 100% 0%, #0a3d6e 0%, transparent 45%),
-                  var(--bg);
-      color: var(--text);
-    }
-    .wrap {
-      max-width: 720px;
-      margin: 0 auto;
-      padding: 24px 16px 40px;
-      display: flex;
-      flex-direction: column;
-      min-height: 100vh;
-    }
-    header {
-      display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
-      gap: 12px;
-      margin-bottom: 16px;
-    }
-    h1 {
-      margin: 0;
-      font-size: 1.35rem;
-      letter-spacing: -0.02em;
-    }
-    .sub { color: var(--muted); font-size: 0.9rem; margin-top: 4px; }
-    .badge {
-      font-size: 0.75rem;
-      padding: 4px 10px;
-      border-radius: 999px;
-      border: 1px solid var(--border);
-      background: var(--panel);
-      white-space: nowrap;
-    }
-    .badge.ok { border-color: #166534; color: #86efac; }
-    .badge.dry { border-color: #854d0e; color: #fde68a; }
-    #chat {
-      flex: 1;
-      background: var(--panel);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 16px;
-      overflow-y: auto;
-      min-height: 420px;
-      max-height: calc(100vh - 220px);
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-    .msg {
-      max-width: 92%;
-      padding: 10px 14px;
-      border-radius: 14px;
-      white-space: pre-wrap;
-      line-height: 1.45;
-      font-size: 0.95rem;
-    }
-    .msg.user {
-      align-self: flex-end;
-      background: var(--user);
-      border: 1px solid #2a5080;
-    }
-    .msg.assistant {
-      align-self: flex-start;
-      background: var(--bot);
-      border: 1px solid var(--border);
-    }
-    .msg .label {
-      font-size: 0.7rem;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      color: var(--muted);
-      margin-bottom: 4px;
-    }
-    form {
-      display: flex;
-      gap: 8px;
-      margin-top: 12px;
-    }
-    input[type="text"] {
-      flex: 1;
-      background: var(--panel);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 12px 14px;
-      color: var(--text);
-      font-size: 1rem;
-      outline: none;
-    }
-    input[type="text"]:focus { border-color: var(--accent); }
-    button {
-      background: linear-gradient(180deg, var(--accent), var(--accent2));
-      color: white;
-      border: none;
-      border-radius: 12px;
-      padding: 0 18px;
-      font-weight: 600;
-      cursor: pointer;
-    }
-    button:disabled { opacity: 0.5; cursor: not-allowed; }
-    button.secondary {
-      background: transparent;
-      border: 1px solid var(--border);
-      color: var(--muted);
-    }
-    .hints {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-top: 10px;
-    }
-    .hints button {
-      background: var(--panel);
-      border: 1px solid var(--border);
-      color: var(--muted);
-      font-weight: 500;
-      font-size: 0.8rem;
-      padding: 6px 10px;
-      border-radius: 999px;
-    }
-    footer {
-      margin-top: 16px;
-      color: var(--muted);
-      font-size: 0.8rem;
-      text-align: center;
-    }
-    a { color: #7dd3fc; }
-  </style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>JobPay Agent — the AI back office for home-service crews, paid through PayPal</title>
+  <meta name="description" content="Onboard workers, close out jobs, pay your crew with PayPal Payouts and bill customers with PayPal — in plain English, every dollar human-approved." />
+  <meta name="theme-color" content="#0c0b09" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%23ffb547'/><text x='16' y='23' font-family='Georgia' font-size='20' text-anchor='middle' fill='%230c0b09'>J</text></svg>" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter+Tight:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/app.css" />
 </head>
 <body>
-  <div class="wrap">
-    <header>
+  <div class="grain" aria-hidden="true"></div>
+  <header class="mast">
+    <div class="brand">
+      <div class="mark" aria-hidden="true">J</div>
       <div>
-        <h1>JobPay Agent</h1>
-        <div class="sub">Hire a gig worker → draft PayPal payout → confirm → send (sandbox)</div>
+        <h1>JobPay <em>Agent</em></h1>
+        <p class="tag">The back office for your crew. Run it in plain English, pay through PayPal.</p>
       </div>
-      <div id="mode" class="badge dry">checking…</div>
-    </header>
-
-    <div id="chat" aria-live="polite"></div>
-
-    <form id="form">
-      <input id="input" type="text" placeholder='Pay Jane $50 for the lawn job at jane@example.com' autocomplete="off" />
-      <button type="submit" id="send">Send</button>
-      <button type="button" class="secondary" id="reset">Reset</button>
-    </form>
-
-    <div class="hints">
-      <button type="button" data-q="Pay Jane $50 for the lawn job at jane@example.com">Example payout</button>
-      <button type="button" data-q="confirm">Confirm</button>
-      <button type="button" data-q="cancel">Cancel</button>
-      <button type="button" data-q="status">Check status</button>
     </div>
+    <div class="mast-right">
+      <span class="pill" id="modePill">…</span>
+      <span class="pill ghost" id="plannerPill">…</span>
+      <button class="btn ghost sm" id="demoBtn" type="button">Load demo crew</button>
+      <button class="btn ghost sm" id="resetBtn" type="button" title="Start a fresh session">Reset</button>
+    </div>
+  </header>
 
-    <footer>
-      PayPal AI Hackathon 2026 · Best Use of Agentic Commerce ·
-      <a href="https://github.com/godbody4040-oss/JobPay-Agent" target="_blank" rel="noreferrer">GitHub</a>
-      · MIT
-    </footer>
-  </div>
+  <section class="ticker" aria-label="Today at a glance">
+    <div class="tick"><span class="k">Paid to crew</span><span class="v" id="tPaid">$0</span></div>
+    <div class="tick"><span class="k">Billed customers</span><span class="v" id="tBilled">$0</span></div>
+    <div class="tick"><span class="k">Gross margin</span><span class="v" id="tMargin">$0</span></div>
+    <div class="tick"><span class="k">Awaiting your OK</span><span class="v" id="tPending">0</span></div>
+    <div class="tick hide-sm"><span class="k">Daily payout cap left</span><span class="v" id="tCap">$—</span></div>
+  </section>
 
-  <script>
-    const sessionId = crypto.randomUUID();
-    const chat = document.getElementById("chat");
-    const form = document.getElementById("form");
-    const input = document.getElementById("input");
-    const sendBtn = document.getElementById("send");
-    const mode = document.getElementById("mode");
+  <nav class="tabs" role="tablist" aria-label="Sections">
+    <button role="tab" aria-selected="true" data-tab="chat">Agent</button>
+    <button role="tab" aria-selected="false" data-tab="ledger">Ledger <b id="tabBadge" hidden></b></button>
+    <button role="tab" aria-selected="false" data-tab="crew">Crew</button>
+  </nav>
 
-    function addMsg(role, content) {
-      const el = document.createElement("div");
-      el.className = "msg " + role;
-      el.innerHTML = `<div class="label">${role === "user" ? "You" : "JobPay Agent"}</div>`;
-      const body = document.createElement("div");
-      body.textContent = content;
-      el.appendChild(body);
-      chat.appendChild(el);
-      chat.scrollTop = chat.scrollHeight;
-    }
+  <main class="layout">
+    <section class="col chat" data-panel="chat" aria-label="Agent conversation">
+      <div class="col-head">
+        <span class="eyebrow">Transcript</span>
+        <span class="muted small">Drafts never move money until you press Confirm.</span>
+      </div>
+      <div class="log" id="log" aria-live="polite"></div>
+      <div class="chips" id="chips"></div>
+      <form class="composer" id="composer" autocomplete="off">
+        <textarea id="input" rows="1" placeholder="e.g. Maria finished the water heater repair for Bob Smith bob.smith@example.com, 3 hours, charge $240" aria-label="Message JobPay Agent"></textarea>
+        <button class="btn primary" id="sendBtn" type="submit" aria-label="Send">Send <span aria-hidden="true">↵</span></button>
+      </form>
+    </section>
 
-    async function refreshHealth() {
-      try {
-        const r = await fetch("/health");
-        const j = await r.json();
-        if (j.paypalCredentials) {
-          mode.textContent = "sandbox live";
-          mode.className = "badge ok";
-        } else {
-          mode.textContent = "dry-run";
-          mode.className = "badge dry";
-        }
-      } catch {
-        mode.textContent = "offline";
-      }
-    }
+    <aside class="col side">
+      <section class="panel" data-panel="ledger">
+        <div class="col-head">
+          <span class="eyebrow">Ledger</span>
+          <button class="btn ghost xs" id="refreshBtn" type="button">↻ Live PayPal status</button>
+        </div>
+        <div id="grid" class="grid-wrap"></div>
+        <div class="col-head tight"><span class="eyebrow">Activity</span></div>
+        <ol class="feed" id="feed"></ol>
+      </section>
+      <section class="panel" data-panel="crew">
+        <div class="col-head"><span class="eyebrow">Crew</span><span class="muted small" id="crewCount"></span></div>
+        <ul class="crew" id="crew"></ul>
+        <div class="col-head tight"><span class="eyebrow">Guardrails</span></div>
+        <ul class="rails" id="rails"></ul>
+      </section>
+    </aside>
+  </main>
 
-    async function send(text) {
-      const message = text.trim();
-      if (!message) return;
-      addMsg("user", message);
-      input.value = "";
-      sendBtn.disabled = true;
-      try {
-        const r = await fetch("/api/chat", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ message, sessionId }),
-        });
-        const j = await r.json();
-        if (!r.ok) throw new Error(j.error || "Request failed");
-        addMsg("assistant", j.reply);
-      } catch (e) {
-        addMsg("assistant", "Error: " + e.message);
-      } finally {
-        sendBtn.disabled = false;
-        input.focus();
-      }
-    }
+  <footer class="foot">
+    <span>Built for the PayPal AI Hackathon 2026 · Payouts · Invoicing · Orders · sandbox-locked</span>
+    <a href="https://github.com/godbody4040-oss/JobPay-Agent" target="_blank" rel="noopener">Source (MIT)</a>
+  </footer>
 
-    form.addEventListener("submit", (e) => {
-      e.preventDefault();
-      send(input.value);
-    });
-
-    document.getElementById("reset").addEventListener("click", async () => {
-      await fetch("/api/reset", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sessionId }),
-      });
-      chat.innerHTML = "";
-      addMsg("assistant", "Session reset. Try: Pay Jane $50 for the lawn job at jane@example.com");
-    });
-
-    document.querySelectorAll(".hints button").forEach((btn) => {
-      btn.addEventListener("click", () => send(btn.dataset.q));
-    });
-
-    refreshHealth();
-    addMsg(
-      "assistant",
-      "Hi — I'm JobPay Agent.\n\nTry: \"Pay Jane $50 for the lawn job at jane@example.com\"\nI'll draft a PayPal payout and wait for your confirm before sending."
-    );
-  </script>
+  <script src="https://cdn.jsdelivr.net/npm/ag-grid-community@33.3.2/dist/ag-grid-community.min.js" defer></script>
+  <script src="/app.js" defer></script>
 </body>
 </html>

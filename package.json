@@ -1,25 +1,27 @@
 {
   "name": "jobpay-agent",
-  "version": "0.1.0",
-  "description": "AI agent that helps hire and pay gig workers via PayPal — PayPal AI Hackathon 2026 entry",
+  "version": "1.0.0",
+  "description": "Agentic PayPal back-office for home-service crews: onboard workers, close out jobs, pay via PayPal Payouts, bill via Invoicing/Orders — every dollar human-approved. PayPal AI Hackathon 2026.",
   "private": false,
   "license": "MIT",
   "type": "module",
   "scripts": {
-    "dev": "bun --env-file=.env --watch src/index.ts",
-    "start": "bun --env-file=.env run src/index.ts",
+    "start": "bun run src/index.ts",
+    "dev": "bun --watch run src/index.ts",
+    "test": "bun test",
     "typecheck": "tsc --noEmit",
-    "build": "tsc"
+    "smoke": "bun run scripts/smoke.ts"
   },
   "dependencies": {
     "express": "^4.21.2"
   },
   "devDependencies": {
+    "@types/bun": "^1.4.4",
     "@types/express": "^4.17.21",
     "@types/node": "^22.10.2",
     "typescript": "^5.7.2"
   },
   "engines": {
-    "node": ">=20"
+    "bun": ">=1.1"
   }
 }
