@@ -6,8 +6,8 @@
   "license": "MIT",
   "type": "module",
   "scripts": {
-    "dev": "bun run --watch src/index.ts",
-    "start": "bun run src/index.ts",
+    "dev": "bun --env-file=.env --watch src/index.ts",
+    "start": "bun --env-file=.env run src/index.ts",
     "typecheck": "tsc --noEmit",
     "build": "tsc"
   },
