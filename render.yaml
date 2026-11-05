@@ -1,0 +1,22 @@
+# Render Blueprint — one-click free deploy: https://render.com/deploy?repo=https://github.com/godbody4040-oss/JobPay-Agent
+services:
+  - type: web
+    name: jobpay-agent
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: PAYPAL_MODE
+        value: sandbox            # live is hard-locked off in code
+      - key: PAYPAL_CLIENT_ID     # optional — leave empty for DRY-RUN demo
+        sync: false
+      - key: PAYPAL_CLIENT_SECRET # optional — sandbox secret only
+        sync: false
+      - key: JOBPAY_MAX_PAYOUT
+        value: "500"
+      - key: JOBPAY_DAILY_CAP
+        value: "2000"
+      - key: RATE_LIMIT_PER_MIN
+        value: "60"
