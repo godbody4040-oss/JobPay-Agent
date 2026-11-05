@@ -165,6 +165,20 @@ export async function confirmAction(s: Session, id: string, trace: TraceStep[] =
       const job = s.jobs.find((j) => j.id === a.jobId);
       if (job) job.status = job.status === "billed" ? "closed" : "worker_paid";
       log(s, "payout", `Paid ${a.counterparty.name || a.counterparty.email} ${$(a.amount)} · batch ${a.paypalId}`, a.id);
+    } else if (a.kind === "payroll") {
+      const items = a.items || [];
+      const r = await timed(trace, "paypal.payouts.create (batch)", { workers: items.length, total: a.amount }, () =>
+        pp.createPayoutBatch(a.idempotencyKey, items, { confirmed: true })
+      );
+      a.paypalApi = "payouts";
+      a.paypalId = r.data.batch_header?.payout_batch_id;
+      a.paypalStatus = r.data.batch_header?.batch_status;
+      a.dryRun = r.dryRun;
+      for (const i of items) {
+        const job = s.jobs.find((j) => j.id === i.jobId);
+        if (job) job.status = job.status === "billed" ? "closed" : "worker_paid";
+      }
+      log(s, "payroll", `Payroll: ${items.length} workers, ${$(a.amount)} in one batch · ${a.paypalId}`, a.id);
     } else if (a.kind === "invoice") {
       try {
         const inv = await timed(trace, "paypal.invoicing.create", { amount: a.amount, to: a.counterparty.email }, () =>
@@ -388,12 +402,60 @@ function logJob(s: Session, i: Extract<Intent, { type: "log_job" }>, out: string
   return created;
 }
 
+function draftPayroll(s: Session, out: string[]): MoneyAction | null {
+  const paidJobIds = new Set<string>();
+  for (const x of s.actions) {
+    if (x.status !== "done") continue;
+    if (x.kind === "payout" && x.jobId) paidJobIds.add(x.jobId);
+    if (x.kind === "payroll") x.items?.forEach((i) => i.jobId && paidJobIds.add(i.jobId));
+  }
+  const unpaid = s.jobs.filter((j) => j.workerId && j.workerPay && !paidJobIds.has(j.id) && j.status !== "worker_paid" && j.status !== "closed");
+  if (!unpaid.length) {
+    out.push("Payroll is clear. Every logged job is already paid. Log a job and I'll queue it for the next batch.");
+    return null;
+  }
+  // Fold any single pending payout drafts for these jobs into the batch.
+  const folded = s.actions.filter((x) => x.kind === "payout" && (x.status === "pending" || x.status === "blocked") && x.jobId && unpaid.some((j) => j.id === x.jobId));
+  for (const f of folded) {
+    f.status = "canceled";
+    log(s, "system", `Folded ${f.title} into payroll`, f.id);
+  }
+  const batchId = pp.newId("payroll");
+  const items = unpaid.map((j) => {
+    const w = s.workers.find((x) => x.id === j.workerId)!;
+    return { workerId: w.id, name: w.name, email: w.email || "", amount: j.workerPay!, note: `Payment for ${j.title}`, jobId: j.id, senderItemId: pp.newId("jp") };
+  });
+  const total = Math.round(items.reduce((n, i) => n + i.amount, 0) * 100) / 100;
+  const base = {
+    kind: "payroll" as const,
+    title: `Payroll · ${items.length} job${items.length > 1 ? "s" : ""}`,
+    amount: total,
+    counterparty: { name: [...new Set(items.map((i) => i.name.split(" ")[0]))].join(", ") },
+    note: "One PayPal Payouts batch for all unpaid jobs",
+    direction: "out" as const,
+    items,
+    request: { method: "POST", path: "/v1/payments/payouts", body: pp.buildBatchBody(batchId, items) },
+  };
+  const a = draft(s, base);
+  a.idempotencyKey = batchId;
+  out.push(
+    [
+      `Payroll ready: **${items.length} job${items.length > 1 ? "s" : ""}**, **${$(total)}**, sent as ONE PayPal Payouts batch${folded.length ? ` (folded in ${folded.length} single draft${folded.length > 1 ? "s" : ""})` : ""}.`,
+      ...items.map((i) => `• ${i.name}: ${$(i.amount)} for ${i.note.replace("Payment for ", "")}`),
+      renderDraftLine(a),
+    ].join("\n")
+  );
+  return a;
+}
+
 function report(s: Session): string {
   const t = totals(s);
   const L = limits();
   const byWorker = new Map<string, number>();
-  for (const a of s.actions.filter((x) => x.kind === "payout" && x.status === "done"))
-    byWorker.set(a.counterparty.name || a.counterparty.email!, (byWorker.get(a.counterparty.name || a.counterparty.email!) || 0) + a.amount);
+  for (const a of s.actions.filter((x) => (x.kind === "payout" || x.kind === "payroll") && x.status === "done")) {
+    const rows = a.items?.length ? a.items.map((i) => [i.name, i.amount] as const) : [[a.counterparty.name || a.counterparty.email!, a.amount] as const];
+    for (const [n, v] of rows) byWorker.set(n, (byWorker.get(n) || 0) + v);
+  }
   const jobs = s.jobs.filter((j) => j.charge && j.workerPay);
   const avgMargin = jobs.length ? jobs.reduce((n, j) => n + (j.charge! - j.workerPay!) / j.charge!, 0) / jobs.length : undefined;
   const open = s.actions.filter((a) => a.status === "done" && a.direction === "in" && !/PAID|COMPLETED/.test(a.paypalStatus || ""));
@@ -422,7 +484,7 @@ export const HELP = [
   "I run the money side of a home-service crew on PayPal. Try:",
   "• **Onboard** — “Onboard Maria Lopez, plumber, maria.lopez@example.com, $45/hr”",
   "• **Close out a job** — “Maria finished the gutter job for Bob Smith bob.smith@example.com, 3 hours, charge $240”",
-  "• **Pay** — “Pay Dev $60 for the fence repair”",
+  "• **Pay** — “Pay Dev $60 for the fence repair”, or **“Run payroll”** to pay every unpaid job in one PayPal batch",
   "• **Bill** — “Invoice Ana $180 for tile work at ana.ruiz@example.com” or “Send a payment link to Ana for $99”",
   "• **Track** — “status”, “show my books”, “who's on my crew”",
   "Every payment is a draft until you hit **Confirm**. Policy limits and a sandbox lock are always on.",
@@ -492,6 +554,11 @@ export async function handleMessage(s: Session, text: string): Promise<AgentRepl
       case "log_job":
         actionIds.push(...logJob(s, intent, out).map((a) => a.id));
         break;
+      case "payroll": {
+        const a = draftPayroll(s, out);
+        if (a) actionIds.push(a.id);
+        break;
+      }
       case "capture": {
         const src = intent.orderId
           ? s.actions.find((a) => a.paypalId === intent.orderId)
@@ -574,7 +641,9 @@ export function executedLine(a: MoneyAction): string {
   if (a.status === "done") {
     const mode = a.dryRun ? " (dry-run)" : " in the PayPal sandbox";
     const what =
-      a.kind === "payout"
+      a.kind === "payroll"
+        ? `Payroll sent${mode}: ${a.items?.length} workers, ${$(a.amount)} in one batch · ${a.paypalId} · ${a.paypalStatus}`
+        : a.kind === "payout"
         ? `Paid ${a.counterparty.name || a.counterparty.email} ${$(a.amount)}${mode} · batch ${a.paypalId} · ${a.paypalStatus}`
         : a.kind === "capture"
           ? `Captured ${$(a.amount)}${mode} · ${a.paypalStatus}`

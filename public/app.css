@@ -273,3 +273,8 @@ textarea::placeholder { color: #6f685c; }
 }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
 textarea:placeholder-shown { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.items { list-style: none; padding: 0; margin: 10px 0 0; border-top: 1px dashed var(--line2); }
+.items li { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) auto; gap: 10px; padding: 7px 0; border-bottom: 1px dashed var(--line); font-size: 13.5px; align-items: baseline; }
+.items li > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.items b { font: 500 13px var(--mono); }
+@media (max-width: 560px) { .items li { grid-template-columns: minmax(0, 1fr) auto; } .items li > .muted { display: none; } }

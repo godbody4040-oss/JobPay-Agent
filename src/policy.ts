@@ -20,7 +20,7 @@ export function evaluate(s: Session, a: Omit<MoneyAction, "checks" | "status">):
       : { id: "sandbox", label: "Live mode is disabled in this build", level: "fail" }
   );
 
-  if (a.kind !== "capture") {
+  if (a.kind !== "capture" && a.kind !== "payroll") {
     checks.push(
       a.counterparty.email && EMAIL.test(a.counterparty.email)
         ? { id: "email", label: "Valid PayPal email", level: "pass", detail: a.counterparty.email }
@@ -47,6 +47,8 @@ export function evaluate(s: Session, a: Omit<MoneyAction, "checks" | "status">):
         ? { id: "kyc", label: `${w.name} is on your crew`, level: "pass" }
         : { id: "kyc", label: "Recipient not onboarded to your crew", level: "warn", detail: "Onboard them first for a clean audit trail." }
     );
+    const inPayroll = a.jobId && s.actions.find((x) => x.kind === "payroll" && (x.status === "done" || x.status === "pending") && x.items?.some((i) => i.jobId === a.jobId));
+    if (inPayroll) checks.push({ id: "dup", label: "Job already in a payroll batch", level: "fail", detail: inPayroll.id });
     const dup = s.actions.find(
       (x) =>
         x.kind === "payout" &&
@@ -65,6 +67,21 @@ export function evaluate(s: Session, a: Omit<MoneyAction, "checks" | "status">):
           : { id: "margin", label: `Paying $${(-margin).toFixed(2)} more than you billed`, level: "warn" }
       );
     }
+  }
+
+  if (a.kind === "payroll") {
+    const t = totals(s);
+    const items = a.items || [];
+    checks.push(items.length ? { id: "items", label: `${items.length} worker${items.length > 1 ? "s" : ""} in one batch`, level: "pass" } : { id: "items", label: "Nothing to pay", level: "fail" });
+    const bad = items.filter((i) => !EMAIL.test(i.email));
+    checks.push(bad.length ? { id: "email", label: `Missing PayPal email: ${bad.map((b) => b.name).join(", ")}`, level: "fail" } : { id: "email", label: "Every worker has a PayPal email", level: "pass" });
+    const over = items.filter((i) => i.amount > L.maxPayout);
+    checks.push(over.length ? { id: "cap", label: `Over per-payout cap: ${over.map((o) => o.name).join(", ")}`, level: "fail" } : { id: "cap", label: `Each item under $${L.maxPayout}`, level: "pass" });
+    checks.push(
+      t.paidToday + a.amount <= L.dailyPayoutCap
+        ? { id: "daily", label: `Within daily cap ($${(L.dailyPayoutCap - t.paidToday).toFixed(0)} left)`, level: "pass" }
+        : { id: "daily", label: `Exceeds daily payout cap ($${L.dailyPayoutCap})`, level: "fail" }
+    );
   }
 
   if (a.kind === "invoice" || a.kind === "payment_link") {

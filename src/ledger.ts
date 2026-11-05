@@ -24,7 +24,7 @@ export interface Job {
   createdAt: number;
 }
 
-export type ActionKind = "payout" | "invoice" | "payment_link" | "capture";
+export type ActionKind = "payout" | "payroll" | "invoice" | "payment_link" | "capture";
 export type ActionStatus = "pending" | "blocked" | "executing" | "done" | "canceled" | "failed";
 
 export interface PolicyCheck {
@@ -32,6 +32,16 @@ export interface PolicyCheck {
   label: string;
   level: "pass" | "warn" | "fail";
   detail?: string;
+}
+
+export interface PayrollItem {
+  workerId?: string;
+  name: string;
+  email: string;
+  amount: number;
+  note: string;
+  jobId?: string;
+  senderItemId: string;
 }
 
 export interface MoneyAction {
@@ -47,6 +57,7 @@ export interface MoneyAction {
   jobId?: string;
   workerId?: string;
   orderId?: string; // for capture
+  items?: PayrollItem[]; // for payroll batches
   checks: PolicyCheck[];
   request: { method: string; path: string; body?: unknown };
   idempotencyKey: string;
@@ -64,7 +75,7 @@ export interface MoneyAction {
 export interface Activity {
   id: string;
   ts: number;
-  kind: "worker" | "job" | "payout" | "invoice" | "payment_link" | "capture" | "policy" | "system";
+  kind: "worker" | "job" | "payout" | "payroll" | "invoice" | "payment_link" | "capture" | "policy" | "system";
   text: string;
   ref?: string;
 }
@@ -147,11 +158,11 @@ export function upsertWorker(s: Session, w: Omit<Worker, "id" | "createdAt">): {
 export function totals(s: Session) {
   const done = s.actions.filter((a) => a.status === "done");
   const sum = (xs: MoneyAction[]) => xs.reduce((n, a) => n + a.amount, 0);
-  const paidOut = sum(done.filter((a) => a.kind === "payout"));
+  const paidOut = sum(done.filter((a) => a.kind === "payout" || a.kind === "payroll"));
   const billed = sum(done.filter((a) => a.kind === "invoice" || a.kind === "payment_link"));
   const collected = sum(done.filter((a) => a.kind === "capture"));
   const today = new Date().toDateString();
-  const paidToday = sum(done.filter((a) => a.kind === "payout" && new Date(a.executedAt || 0).toDateString() === today));
+  const paidToday = sum(done.filter((a) => (a.kind === "payout" || a.kind === "payroll") && new Date(a.executedAt || 0).toDateString() === today));
   const pending = s.actions.filter((a) => a.status === "pending").length;
   const blocked = s.actions.filter((a) => a.status === "blocked").length;
   return { paidOut, billed, collected, paidToday, pending, blocked, grossMargin: billed - paidOut };

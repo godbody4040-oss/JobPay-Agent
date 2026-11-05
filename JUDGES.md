@@ -20,7 +20,8 @@ bun install && bun run start          # http://localhost:3000, works with no key
 | 0:40–0:50 | Point at the policy chips (caps, crew member, margin 44%, sandbox lock) and open **View PayPal request**. | “Every draft goes through a spend policy, and here is the exact PayPal request it will send.” |
 | 0:50–1:05 | **Confirm & send** on both cards. The ticker updates, the AG Grid ledger fills, and the activity feed shows a payout batch ID and an invoice or checkout link. | “One tap each, and it's live in the PayPal sandbox: a Payouts batch for Maria and a bill for Bob. If Invoicing isn't enabled, the agent heals itself with a PayPal Checkout link.” |
 | 1:05–1:15 | Type *“Pay Dev $900 for the deck.”* A red **Blocked by policy** card appears. | “Guardrails are real. Over the cap is blocked, and a duplicate pay for the same job is blocked too.” |
-| 1:15–1:25 | **↻ Live PayPal status**, then the *“Show my books”* chip. | “It reconciles against PayPal and tells me what I paid, what I billed, my margin and who still owes me.” |
+| 1:15–1:20 | *(Optional, if time allows)* Log a second job for Dev, then say *“Run payroll.”* | “Friday payroll: every unpaid job goes out as one PayPal Payouts batch.” |
+| 1:20–1:25 | **↻ Live PayPal status**, then the *“Show my books”* chip. | “It reconciles against PayPal and tells me what I paid, what I billed, my margin and who still owes me.” |
 | 1:25–1:30 | Open **agent trace**. | “Every step is traceable. The AI plans, PayPal moves the money, and the human stays in control.” |
 
 **Recording tips:** use a 1440×900 browser window, run in **sandbox** mode so the pill reads *PayPal sandbox · live*, and finish with a 5-second phone-width shot (the tabs: Agent, Ledger, Crew).
@@ -29,7 +30,7 @@ bun install && bun run start          # http://localhost:3000, works with no key
 
 | Criterion | Evidence | Where |
 |---|---|---|
-| **Technological implementation** | 3 PayPal products (Payouts, Invoicing v2, Orders v2) across create, send, get and capture. OAuth caching, `PayPal-Request-Id` idempotency, a sandbox lock, a 403 fallback from Invoicing to Orders. An offline NLU and an optional LLM with tool-calling share one tool manifest. 13 tests and a live smoke script. | `src/paypal.ts`, `src/agent.ts`, `src/llm.ts`, `tests/`, `scripts/smoke.ts` |
+| **Technological implementation** | 3 PayPal products: Payouts (single and multi-item payroll batches), Invoicing v2 and Orders v2, across create, send, get and capture. OAuth caching, `PayPal-Request-Id` idempotency, a sandbox lock, a 403 fallback from Invoicing to Orders. An offline NLU and an optional LLM with tool-calling share one tool manifest. 14 tests and a live smoke script. | `src/paypal.ts`, `src/agent.ts`, `src/llm.ts`, `tests/`, `scripts/smoke.ts` |
 | **Design** | Dark editorial UI (serif display, mono data, amber accent). Draft cards with policy chips and a request preview. Live ticker, AG Grid ledger, activity timeline. Tabbed mobile layout and reduced-motion support. | `public/` |
 | **Potential impact** | A specific audience (owners of 2–25-person contractor crews) and a specific pain (end-of-day close-out across pay, billing and margin). It runs on the PayPal account they already use to get paid. | README, “The problem” |
 | **Innovation** | **Job close-out as one agentic transaction**: a single sentence produces a two-sided PayPal flow (money out to labor, money in from the customer) with margin awareness. A policy engine sits between the AI and the money, and a human holds the final key. | `logJob()` in `src/agent.ts` |

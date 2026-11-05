@@ -158,6 +158,28 @@ export function buildPayoutBody(p: PayoutInput) {
   };
 }
 
+export function buildBatchBody(batchId: string, items: Array<{ email: string; amount: number; note: string; senderItemId: string }>, subject = "Payroll from JobPay Agent") {
+  return {
+    sender_batch_header: { sender_batch_id: `jobpay_${batchId}`, email_subject: subject, email_message: "Thanks for your work this week — paid via JobPay Agent." },
+    items: items.map((i) => ({
+      recipient_type: "EMAIL",
+      amount: { value: money(i.amount), currency: "USD" },
+      note: i.note,
+      sender_item_id: i.senderItemId,
+      receiver: i.email,
+    })),
+  };
+}
+
+/** One Payouts batch, many workers (Friday payroll). */
+export async function createPayoutBatch(batchId: string, items: Array<{ email: string; amount: number; note: string; senderItemId: string }>, opts: { confirmed: boolean }) {
+  if (!opts.confirmed) throw new Error("Refusing to move money: payroll requires human confirmation.");
+  return paypalRequest(
+    { method: "POST", path: "/v1/payments/payouts", body: buildBatchBody(batchId, items), requestId: batchId },
+    () => ({ batch_header: { payout_batch_id: fakeId("DRY"), batch_status: "PENDING" } })
+  );
+}
+
 export async function createPayout(p: PayoutInput, opts: { confirmed: boolean }) {
   if (!opts.confirmed) throw new Error("Refusing to move money: payout requires human confirmation.");
   return paypalRequest(

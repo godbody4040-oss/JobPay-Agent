@@ -9,7 +9,7 @@ const fmt = (n) => "$" + Number(n || 0).toLocaleString("en-US", { minimumFractio
 const fmt0 = (n) => (n < 0 ? "−$" : "$") + Math.abs(Number(n || 0)).toLocaleString("en-US", { maximumFractionDigits: 0 });
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 const time = (ts) => new Date(ts).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
-const KIND = { payout: "Payout · PayPal Payouts", invoice: "Invoice · PayPal Invoicing", payment_link: "Payment link · PayPal Checkout", capture: "Capture · PayPal Orders" };
+const KIND = { payroll: "Payroll batch · PayPal Payouts", payout: "Payout · PayPal Payouts", invoice: "Invoice · PayPal Invoicing", payment_link: "Payment link · PayPal Checkout", capture: "Capture · PayPal Orders" };
 const STATE = { pending: "Awaiting approval", blocked: "Blocked by policy", executing: "Sending…", done: "Sent", canceled: "Canceled", failed: "Failed" };
 
 function md(text) {
@@ -64,6 +64,7 @@ function cardHTML(a) {
     <div class="amt">${fmt(a.amount)}<small>${a.currency}</small></div>
     <div class="party">${to} <strong>${esc(a.counterparty?.name || a.counterparty?.email || "customer")}</strong> ${a.counterparty?.email ? `<span class="mono">${esc(a.counterparty.email)}</span>` : ""}</div>
     <div class="party muted">${esc(a.note)}</div>
+    ${a.items?.length ? `<ul class="items">${a.items.map((i) => `<li><span>${esc(i.name)} <span class="mono">${esc(i.email)}</span></span><span class="muted">${esc(i.note.replace("Payment for ", ""))}</span><b>${fmt(i.amount)}</b></li>`).join("")}</ul>` : ""}
     <ul class="checks">${checks}</ul>
     <details class="req"><summary>View PayPal request · ${esc(a.request?.method)} ${esc(a.request?.path)}</summary><pre>${esc(JSON.stringify(a.request?.body ?? {}, null, 2))}</pre></details>
     ${result}
@@ -199,7 +200,11 @@ function renderSide() {
 
   // crew
   const earned = {};
-  for (const a of S.actions) if (a.kind === "payout" && a.status === "done") earned[a.counterparty.email] = (earned[a.counterparty.email] || 0) + a.amount;
+  for (const a of S.actions) {
+    if (a.status !== "done") continue;
+    if (a.kind === "payout") earned[a.counterparty.email] = (earned[a.counterparty.email] || 0) + a.amount;
+    if (a.kind === "payroll") for (const i of a.items || []) earned[i.email] = (earned[i.email] || 0) + i.amount;
+  }
   $("#crewCount").textContent = S.workers.length ? `${S.workers.length} on payroll` : "";
   $("#crew").innerHTML = S.workers.length
     ? S.workers
@@ -318,6 +323,7 @@ function renderChips() {
     const m = w[0].name.split(" ")[0];
     chips.push([`${m} finished the water heater repair for Bob Smith bob.smith@example.com, 3 hours, charge $240`, !pending]);
     if (w[1]) chips.push([`${w[1].name.split(" ")[0]} finished the fence repair for Ana Ruiz, charge $180`, false]);
+    if (S.jobs.some((j) => j.workerPay && j.status !== "worker_paid" && j.status !== "closed")) chips.push(["Run payroll", false]);
     chips.push(["Send a payment link to Ana Ruiz for $99 deposit", false]);
   }
   if (S.actions.some((a) => a.status === "done")) chips.push(["Status", false], ["Show my books", false]);

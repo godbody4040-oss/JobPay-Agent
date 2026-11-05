@@ -107,11 +107,35 @@ describe("agentic workflow (dry-run)", () => {
   });
 });
 
+describe("payroll batch", () => {
+  test("folds unpaid jobs into ONE multi-item Payouts batch and blocks double pay", async () => {
+    const s = newSession("t6");
+    await handleMessage(s, "load demo crew");
+    await handleMessage(s, "Maria finished the faucet repair for Bob bob@example.com, 2 hours, charge $200");
+    await handleMessage(s, "Dev finished the fence repair for Ana ana@example.com, charge $150");
+    const r = await handleMessage(s, "run payroll");
+    const batch = s.actions.find((a) => a.id === r.actionIds[0])!;
+    expect(batch.kind).toBe("payroll");
+    expect(batch.items).toHaveLength(2);
+    expect(batch.amount).toBe(150); // 2h×$45 + $60/job
+    expect((batch.request.body as any).items).toHaveLength(2);
+    // single payout drafts for those jobs were folded in
+    expect(s.actions.filter((a) => a.kind === "payout" && a.status === "pending")).toHaveLength(0);
+    await confirmAction(s, batch.id);
+    expect(batch.status).toBe("done");
+    expect(s.jobs.every((j) => j.status === "worker_paid")).toBe(true);
+    const again = await handleMessage(s, "run payroll");
+    expect(again.actionIds).toHaveLength(0);
+    expect(again.reply).toMatch(/clear/);
+  });
+});
+
 describe("PayPal safety", () => {
   test("money-moving helpers refuse without confirmation", async () => {
     await expect(pp.createPayout({ recipientEmail: "a@b.co", amount: 1, note: "x", senderItemId: "x" }, { confirmed: false })).rejects.toThrow();
     await expect(pp.sendInvoice("INV", { confirmed: false, requestId: "x" })).rejects.toThrow();
     await expect(pp.captureOrder("O", { confirmed: false, requestId: "x" })).rejects.toThrow();
+    await expect(pp.createPayoutBatch("b", [], { confirmed: false })).rejects.toThrow();
   });
   test("request bodies match PayPal schemas", () => {
     const b = pp.buildPayoutBody({ recipientEmail: "a@b.co", amount: 12.5, note: "n", senderItemId: "s1" });

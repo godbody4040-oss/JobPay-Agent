@@ -39,6 +39,13 @@ export const TOOLS: ToolDef[] = [
     parameters: { type: "object", properties: { worker: str, email: str, amount: num, note: str } },
   },
   {
+    name: "run_payroll",
+    description: "Draft ONE PayPal Payouts batch paying every worker for all completed, unpaid jobs.",
+    gate: "human",
+    paypal: "POST /v1/payments/payouts (multi-item batch)",
+    parameters: { type: "object", properties: {} },
+  },
+  {
     name: "create_invoice",
     description: "Draft a PayPal invoice to a customer (create + send on confirm).",
     gate: "human",
@@ -76,6 +83,7 @@ export const TOOL_TO_INTENT: Record<string, string> = {
   onboard_worker: "onboard",
   log_job: "log_job",
   create_payout: "pay",
+  run_payroll: "payroll",
   create_invoice: "invoice",
   create_order: "payment_link",
   capture_order: "capture",

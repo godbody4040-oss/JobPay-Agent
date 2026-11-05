@@ -47,6 +47,7 @@ From that one message, the agent:
 It also handles:
 
 - **Onboarding.** For example: “Onboard Dev Patel, handyman, dev.patel@example.com, $60 per job”.
+- **Batch payroll.** “Run payroll” folds every unpaid job into **one multi-item PayPal Payouts batch**, and the single drafts are absorbed so nobody gets paid twice.
 - **Ad-hoc payouts and payment links.**
 - **Capturing approved orders.**
 - **Multi-turn slot filling.** If you say “Pay Jane $50”, the agent asks “What's Jane's PayPal email?”, and your next message fills in the draft.
@@ -67,7 +68,7 @@ There are no keys to set up. Without credentials the app runs in **DRY-RUN** mod
 cp .env.example .env    # add PAYPAL_CLIENT_ID / PAYPAL_CLIENT_SECRET from a sandbox app
 bun run start           # GET /health → "paypalCredentials": true
 bun run smoke           # scripted end-to-end run: onboard → close out → pay + bill → status → books (at most $5 of sandbox money)
-bun test                # 13 tests, forced dry-run
+bun test                # 14 tests, forced dry-run
 ```
 
 **Click path:** **Load demo crew** → tap the amber chip (*“Maria finished the water heater repair…”*) → **Confirm & send** on both cards → **↻ Live PayPal status** → *“Show my books”*. The 90-second script is in [JUDGES.md](JUDGES.md).
@@ -83,7 +84,7 @@ flowchart LR
   N --> I[Typed intents]
   L --> I
   I --> B[Business tools<br/>onboard_worker · log_job · report]
-  I --> D[Money tools → DRAFTS only<br/>create_payout · create_invoice<br/>create_order · capture_order]
+  I --> D[Money tools → DRAFTS only<br/>create_payout · run_payroll · create_invoice<br/>create_order · capture_order]
   D --> G[Policy engine<br/>caps · duplicates · margin · sandbox lock]
   G --> C{{Human Confirm<br/>button or 'confirm'}}
   C -->|only path to money| X[PayPal REST client<br/>OAuth2 · idempotency keys]
@@ -111,7 +112,7 @@ flowchart LR
 | API | Endpoint | Used for |
 |---|---|---|
 | OAuth 2.0 | `POST /v1/oauth2/token` | Client-credentials token, cached until expiry |
-| **Payouts** | `POST /v1/payments/payouts` | Paying workers. `sender_batch_id` and `PayPal-Request-Id` keep retries from paying twice |
+| **Payouts** | `POST /v1/payments/payouts` | Paying workers, either one at a time or as a multi-item **payroll batch**. `sender_batch_id` and `PayPal-Request-Id` keep retries from paying twice |
 | | `GET /v1/payments/payouts/{batch_id}` | Batch and item status in the ledger |
 | **Invoicing v2** | `POST /v2/invoicing/invoices`, `POST …/{id}/send`, `GET …/{id}` | Billing customers with a due date, line item and reference to the job |
 | **Orders v2** | `POST /v2/checkout/orders` (`intent: CAPTURE`, `payer-action` link) | Pay-now checkout links and the invoicing fallback |
@@ -119,7 +120,7 @@ flowchart LR
 
 **Verified against the live PayPal sandbox** (Nov 5, 2026):
 
-- Payout batches were created and returned `PENDING` (for example `EQJADRKGX6CUU`).
+- Payout batches were created and returned `PENDING`, then reached `SUCCESS` (for example `EQJADRKGX6CUU`). A 2-worker payroll batch was also created (`WPLDUM2455MKS`).
 - Orders were created and returned `PAYER_ACTION_REQUIRED` with a working checkout link.
 - Invoicing returned `403 NOT_AUTHORIZED` on our sandbox app because the *Invoicing* feature wasn't enabled. The agent automatically fell back to Orders, and you can see this in the trace.
 
@@ -188,7 +189,6 @@ POST /api/reset       {sessionId}
 ## Roadmap
 
 - PayPal webhooks (`PAYMENT.PAYOUTS-ITEM.SUCCEEDED`, `INVOICING.INVOICE.PAID`) to auto-close jobs
-- Batch Friday payroll (one Payouts batch, many items)
 - Persistent storage (SQLite or Postgres) and multi-user auth
 - Swapping the REST layer for `@paypal/agent-toolkit` or the PayPal MCP server. The tool names already match.
 

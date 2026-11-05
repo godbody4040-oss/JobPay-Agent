@@ -23,6 +23,7 @@ export type Intent =
   | { type: "invoice"; customerName?: string; customerEmail?: string; amount?: number; description?: string }
   | { type: "payment_link"; customerName?: string; customerEmail?: string; amount?: number; description?: string }
   | { type: "capture"; orderId?: string }
+  | { type: "payroll" }
   | { type: "status"; ref?: string }
   | { type: "report" }
   | { type: "team" }
@@ -169,6 +170,7 @@ export function parseClause(text: string, ctx: NluContext): Intent {
     return { type: "cancel", all: /\ball\b|\bboth\b|\beverything\b/i.test(t) };
   if (/^(help|\?|what can you do|how does this work)/i.test(t)) return { type: "help" };
   if (/\b(demo|sample|seed|example crew|load (the )?crew)\b/i.test(lower) && !em.length) return { type: "demo" };
+  if (/\b(run|do|process|send)\b.{0,20}\bpayroll\b|\bpayroll\b|\bpay (everyone|everybody|the (whole )?crew|all( workers)?)\b/i.test(lower)) return { type: "payroll" };
   if (/\bcapture\b/i.test(lower)) return { type: "capture", orderId: t.match(/\b([A-Z0-9]{12,20})\b/)?.[1] };
   if (/\b(status|refresh|track|where is|did .* (clear|go through)|check on)\b/i.test(lower))
     return { type: "status", ref: t.match(/\b([A-Z0-9][A-Z0-9-]{9,})\b/)?.[1] };
