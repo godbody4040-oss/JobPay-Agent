@@ -24,6 +24,7 @@ import {
 import { evaluate, isBlocked, limits } from "./policy.ts";
 import { parse, type Intent } from "./nlu.ts";
 import { llmEnabled, llmPlan } from "./llm.ts";
+import { ground, postMergeCheck } from "./ground.ts";
 
 export interface AgentReply {
   reply: string;
@@ -352,7 +353,7 @@ function bill(s: Session, i: Extract<Intent, { type: "invoice" | "payment_link" 
   const desc = i.description ? cap(i.description) : job?.title || "Home service";
   const c = { name: i.customerName || job?.customerName, email };
   const a = i.type === "invoice" ? draftInvoice(s, c as any, amount!, desc, job?.id) : draftPaymentLink(s, c, amount!, desc, job?.id);
-  out.push(`Drafted a ${what} for **${c.name || c.email}**.\n${renderDraftLine(a)}`);
+  out.push(`Drafted ${what === "invoice" ? "an invoice" : "a payment link"} for **${c.name || c.email}**.\n${renderDraftLine(a)}`);
   return [a];
 }
 
@@ -528,12 +529,29 @@ export async function handleMessage(s: Session, text: string): Promise<AgentRepl
   const ctx = { workerNames: s.workers.map((w) => w.name) };
 
   let planner: "llm" | "offline" = "offline";
-  let intents: Intent[] | null = null;
-  if (llmEnabled()) {
-    intents = await timed(trace, "llm.plan", { text }, () => llmPlan(text, s)).catch(() => null);
-    if (intents?.length) planner = "llm";
+  const rules = await timed(trace, "rules.parse", { text }, () => parse(text, ctx));
+  let intents: Intent[] = rules;
+  // Approvals, cancellations and slot-filling replies are always handled deterministically.
+  const deterministic = rules.some((r) => r.type === "confirm" || r.type === "cancel") || (s.awaiting && rules.every((r) => r.type === "provide"));
+  if (llmEnabled() && !deterministic) {
+    const planned = await timed(trace, "llm.plan", { text }, () => llmPlan(text, s)).catch(() => null);
+    if (planned?.length) {
+      const known = (t?: string) => !!t && t !== "unknown" && t !== "provide";
+      const grounded = planned.map((p, idx) => {
+        const g = ground(p, text, s);
+        const r: any = rules[idx];
+        // A confident rule match on a different task wins; the model only fills what rules can't understand.
+        if (r && known(r.type) && r.type !== g.intent.type) return { intent: r as Intent, dropped: [...g.dropped, `tool=${g.intent.type}→kept rules:${r.type}`] };
+        const merged: any = { ...g.intent };
+        if (r && r.type === merged.type) for (const [k, v] of Object.entries(r)) if (merged[k] === undefined && v !== undefined) merged[k] = v;
+        return { intent: merged as Intent, dropped: [...g.dropped, ...postMergeCheck(merged, text)] };
+      });
+      const dropped = grounded.flatMap((g) => g.dropped);
+      trace.push({ tool: "grounding.check", input: { intents: planned.length }, output: dropped.length ? { dropped } : "all fields traced to the message or crew", ok: true });
+      intents = grounded.map((g) => g.intent);
+      planner = "llm";
+    }
   }
-  if (!intents?.length) intents = await timed(trace, "nlu.parse", { text }, () => parse(text, ctx));
 
   for (let intent of intents) {
     const filled = fill(s, intent);
@@ -648,7 +666,7 @@ export function executedLine(a: MoneyAction): string {
         : a.kind === "capture"
           ? `Captured ${$(a.amount)}${mode} · ${a.paypalStatus}`
           : `Billed ${a.counterparty.name || a.counterparty.email || "customer"} ${$(a.amount)}${mode} · ${a.paypalId}`;
-    return `✅ ${what}${a.link ? `\nCheckout link: ${a.link}` : ""}${a.fallback ? `\n↪ ${a.fallback}` : ""}`;
+    return `✅ ${what}${a.link ? `\nPayPal link: ${a.link}` : ""}${a.fallback ? `\n↪ ${a.fallback}` : ""}`;
   }
   if (a.status === "blocked") return `⛔ ${a.title} is blocked: ${a.checks.filter((c) => c.level === "fail").map((c) => c.label).join("; ")}`;
   return `❌ ${a.title} failed: ${a.error}`;

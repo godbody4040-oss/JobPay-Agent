@@ -159,3 +159,24 @@ describe("public demo lock", () => {
     delete process.env.JOBPAY_FORCE_DRY_RUN;
   });
 });
+
+describe("grounding guard (LLM output)", () => {
+  test("drops invented customer, email, hours; keeps grounded fields", async () => {
+    const { ground, wordNumbers } = await import("../src/ground.ts");
+    const s = newSession("g1");
+    s.workers.push({ id: "w1", name: "Dev Patel", email: "dev.patel@example.com", rate: 60, rateUnit: "job", createdAt: 0 });
+    const g = ground(
+      { type: "log_job", worker: "Dev Patel", customerName: "John Doe", customerEmail: "john.doe@example.com", hours: 2, charge: 60 },
+      "Dev finished the fence repair, charge $60",
+      s
+    );
+    expect(g.intent).toMatchObject({ type: "log_job", worker: "Dev Patel", charge: 60 });
+    expect((g.intent as any).customerName).toBeUndefined();
+    expect((g.intent as any).customerEmail).toBeUndefined();
+    expect((g.intent as any).hours).toBeUndefined();
+    expect(wordNumbers("two hundred forty dollars")).toContain(240);
+  });
+  test("customer 'paying' is the charge, not worker pay", () => {
+    expect(parse("Maria wrapped up at the Johnsons, 2.5 hrs on a clogged drain; they're paying $175 (johnson@example.com)", ctx)[0]).toMatchObject({ charge: 175 });
+  });
+});

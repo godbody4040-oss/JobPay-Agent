@@ -73,8 +73,6 @@ export const TOOLS: ToolDef[] = [
     paypal: "GET /v1/payments/payouts/{id}, GET /v2/invoicing/invoices/{id}, GET /v2/checkout/orders/{id}",
     parameters: { type: "object", properties: { ref: str } },
   },
-  { name: "confirm_pending", description: "ONLY when the user explicitly approves pending drafts (yes/confirm/approve).", gate: "none", parameters: { type: "object", properties: { all: { type: "boolean" } } } },
-  { name: "cancel_pending", description: "User rejects pending drafts.", gate: "none", parameters: { type: "object", properties: { all: { type: "boolean" } } } },
   { name: "report", description: "Summarize money paid, billed, collected and margins.", gate: "none", parameters: { type: "object", properties: {} } },
   { name: "list_team", description: "List the crew.", gate: "none", parameters: { type: "object", properties: {} } },
 ];
@@ -88,8 +86,6 @@ export const TOOL_TO_INTENT: Record<string, string> = {
   create_order: "payment_link",
   capture_order: "capture",
   get_status: "status",
-  confirm_pending: "confirm",
-  cancel_pending: "cancel",
   report: "report",
   list_team: "team",
 };

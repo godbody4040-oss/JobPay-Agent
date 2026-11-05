@@ -1,7 +1,7 @@
 {
   "name": "jobpay-agent",
   "version": "1.0.0",
-  "description": "Agentic PayPal back-office for home-service crews: onboard workers, close out jobs, pay via PayPal Payouts, bill via Invoicing/Orders — every dollar human-approved. PayPal AI Hackathon 2026.",
+  "description": "Agentic PayPal back-office for home-service crews: onboard workers, close out jobs, pay via PayPal Payouts, bill via Invoicing/Orders \u2014 every dollar human-approved. PayPal AI Hackathon 2026.",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -10,7 +10,9 @@
     "dev": "bun --watch run src/index.ts",
     "test": "bun test",
     "typecheck": "tsc --noEmit",
-    "smoke": "bun run scripts/smoke.ts"
+    "smoke": "bun run scripts/smoke.ts",
+    "llm:local": "bash scripts/local-llm.sh",
+    "eval:planner": "bun run scripts/eval-planner.ts"
   },
   "dependencies": {
     "express": "^4.21.2"

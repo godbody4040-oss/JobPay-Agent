@@ -174,7 +174,7 @@ export function parseClause(text: string, ctx: NluContext): Intent {
   if (/\bcapture\b/i.test(lower)) return { type: "capture", orderId: t.match(/\b([A-Z0-9]{12,20})\b/)?.[1] };
   if (/\b(status|refresh|track|where is|did .* (clear|go through)|check on)\b/i.test(lower))
     return { type: "status", ref: t.match(/\b([A-Z0-9][A-Z0-9-]{9,})\b/)?.[1] };
-  if (/\b(report|summary|summarize|how much|margin|ledger|books|totals?|p&l|profit|spent|earned)\b/i.test(lower)) return { type: "report" };
+  if (/\b(report|summary|summarize|how much|margin|ledger|books|totals?|p&l|profit|spent|earned|earn|make|made|revenue|owed|owe me)\b/i.test(lower)) return { type: "report" };
   if (/\b(my team|my crew|roster|who('| i)s on|list (workers|crew|team)|show (workers|crew|team))\b/i.test(lower)) return { type: "team" };
 
   const worker = knownWorker(t, ctx);
@@ -190,8 +190,10 @@ export function parseClause(text: string, ctx: NluContext): Intent {
   const isPay = /\b(pay|payout|send)\b/i.test(lower);
 
   if (isJob) {
-    const cueCharge = amountAfter(t, /(?:charge[ds]?|bill(?:ed)?|invoice|customer pays|price[ds]?|quoted?|total)/);
-    const cuePay = amountAfter(t, /(?:pay(?:ing)?|payout|worker gets|cut)/);
+    const cueCharge = amountAfter(t, /(?:charge[ds]?|bill(?:ed)?|invoice|customer pays|price[ds]?|quoted?|total|(?:they(?:'|’)?re|they are|customer is|client is) paying)/);
+    // "pay Maria $150" is worker pay; "they're paying $175" / "customer pays" is the charge.
+    const customerPaying = /\b(?:they(?:'|’)?re|they are|customer(?: is)?|client(?: is)?|he(?:'|’)s|she(?:'|’)s|owner is)\s+pay(?:ing|s)?\b/i.test(t);
+    const cuePay = customerPaying ? undefined : amountAfter(t, /(?:pay(?:ing)?|payout|worker gets|cut)/);
     let charge = cueCharge;
     let pay = cuePay;
     if (charge === undefined && pay === undefined && amts.length >= 2) {

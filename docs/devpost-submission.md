@@ -1,4 +1,4 @@
-# Devpost submission copy (paste-ready)
+# Devpost submission copy (draft, not submitted)
 
 **Project name:** JobPay Agent
 
@@ -22,8 +22,8 @@ You type something like *“Maria finished the water heater repair for Bob Smith
 
 ## How we built it
 - **PayPal:** Payouts v1 (single payouts and batches, plus status), Invoicing v2 (create, send, get), Orders v2 (create, get, capture), OAuth2 client credentials, and `PayPal-Request-Id` idempotency. Everything is sandbox-locked.
-- **AI:** An agentic planner turns language into typed tool calls. The default planner is a deterministic offline NLU that is free, instant and needs no key. An optional OpenAI-compatible tool-calling planner (OpenAI, or a free local Ollama model) shares the same tool manifest, whose names mirror the PayPal Agent Toolkit. Every response shows an agent trace.
-- **Stack:** Bun, TypeScript, Express, a no-build vanilla JS UI and AG Grid Community. There are 14 tests and GitHub Actions CI, and you can deploy free on Render with Docker and `render.yaml`.
+- **AI:** An LLM tool-calling planner (OpenAI-compatible). We verified it with the free, open-weights **Qwen2.5-3B-Instruct** running locally through llama.cpp. On our 10-prompt eval it chose the right tool and arguments 10/10 times, against 8/10 for our rule-based fallback, mainly by understanding paraphrases like “sixty bucks”. A grounding guard drops any name, email or amount the model outputs that isn't in the message or crew record. Approvals never go to the model. A deterministic rule-based parser (not AI) handles approvals and runs as the fallback, and it is the only planner on the free hosted demo. Every response shows an agent trace.
+- **Stack:** Bun, TypeScript, Express, a no-build vanilla JS UI and AG Grid Community. There are 17 tests and GitHub Actions CI. It is live on a Render free web service at https://jobpay-agent.onrender.com, which is locked to dry-run.
 
 ## Challenges
 - Keeping the AI in charge of *planning* but never *executing*. Only `confirmAction()` can call a money-moving endpoint, and the PayPal helpers refuse to run without `confirmed: true`.
@@ -31,12 +31,15 @@ You type something like *“Maria finished the water heater repair for Bob Smith
 
 ## Accomplishments
 - A real end-to-end run in the PayPal sandbox: a payout batch reached `SUCCESS`, a 2-worker payroll batch was created, and Checkout orders were created with working approval links.
-- A demo that works fully offline with no keys.
+- A demo that works with no keys, plus AI planning that's reproducible with a free local model and no account.
+- We caught the 1.5B model inventing a customer (“John Doe”) and built the grounding guard because of it.
 
 ## What's next
 PayPal webhooks to auto-close jobs, persistent multi-user storage, and swapping the REST layer for `@paypal/agent-toolkit` or the PayPal MCP server.
 
 ## Built with
-paypal-payouts, paypal-invoicing, paypal-orders, typescript, bun, express, ag-grid, openai-compatible (optional), render
+paypal-payouts, paypal-invoicing, paypal-orders, qwen2.5, llama.cpp, typescript, bun, express, ag-grid, render
+
+**Live (dry-run):** https://jobpay-agent.onrender.com
 
 **Try it:** `git clone https://github.com/godbody4040-oss/JobPay-Agent && cd JobPay-Agent && bun install && bun run start`

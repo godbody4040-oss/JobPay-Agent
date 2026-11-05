@@ -7,3 +7,4 @@ tests
 scripts
 docs
 *.log
+.llm

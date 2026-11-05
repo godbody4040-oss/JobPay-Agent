@@ -19,8 +19,9 @@ export function llmLabel(): string | null {
 
 const SYSTEM = `You are JobPay Agent, the money operator for a small home-service business (plumbers, cleaners, handymen).
 Translate the owner's message into tool calls. You may call several tools in order.
-Rules: never invent emails or amounts; leave unknown fields out. Money tools only create drafts the human approves.
-Use log_job when a worker finished a job (it plans payout + customer bill). Use confirm_pending ONLY on explicit approval.`;
+Rules: never invent names, emails, amounts, hours or rates; copy them only from the message or the crew context, and omit anything not stated.
+In log_job, "charge" is what the customer pays; "pay" is what the worker gets — omit pay unless the message states it (the agent computes it from the worker's rate).
+Money tools only create drafts the human approves. Approving or canceling drafts is handled outside you.`;
 
 export async function llmPlan(text: string, s: Session): Promise<Intent[]> {
   const base = (process.env.OPENAI_BASE_URL || "https://api.openai.com/v1").replace(/\/$/, "");
@@ -43,6 +44,7 @@ export async function llmPlan(text: string, s: Session): Promise<Intent[]> {
       body: JSON.stringify({
         model: process.env.OPENAI_MODEL || "gpt-4o-mini",
         temperature: 0,
+        seed: Number(process.env.LLM_SEED || 7),
         messages: [
           { role: "system", content: SYSTEM },
           { role: "system", content: `Context: ${JSON.stringify(context)}` },
