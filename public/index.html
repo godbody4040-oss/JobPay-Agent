@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>JobPay Agent — PayPal AI Hackathon</title>
+  <style>
+    :root {
+      --bg: #0b1220;
+      --panel: #121a2b;
+      --border: #243049;
+      --text: #e8eefc;
+      --muted: #8fa3c4;
+      --accent: #0070ba;
+      --accent2: #003087;
+      --ok: #22c55e;
+      --warn: #f59e0b;
+      --user: #1e3a5f;
+      --bot: #162033;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      background: radial-gradient(1200px 600px at 10% -10%, #14305a 0%, transparent 50%),
+                  radial-gradient(900px 500px at 100% 0%, #0a3d6e 0%, transparent 45%),
+                  var(--bg);
+      color: var(--text);
+    }
+    .wrap {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 24px 16px 40px;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+    header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    h1 {
+      margin: 0;
+      font-size: 1.35rem;
+      letter-spacing: -0.02em;
+    }
+    .sub { color: var(--muted); font-size: 0.9rem; margin-top: 4px; }
+    .badge {
+      font-size: 0.75rem;
+      padding: 4px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--panel);
+      white-space: nowrap;
+    }
+    .badge.ok { border-color: #166534; color: #86efac; }
+    .badge.dry { border-color: #854d0e; color: #fde68a; }
+    #chat {
+      flex: 1;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 16px;
+      overflow-y: auto;
+      min-height: 420px;
+      max-height: calc(100vh - 220px);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .msg {
+      max-width: 92%;
+      padding: 10px 14px;
+      border-radius: 14px;
+      white-space: pre-wrap;
+      line-height: 1.45;
+      font-size: 0.95rem;
+    }
+    .msg.user {
+      align-self: flex-end;
+      background: var(--user);
+      border: 1px solid #2a5080;
+    }
+    .msg.assistant {
+      align-self: flex-start;
+      background: var(--bot);
+      border: 1px solid var(--border);
+    }
+    .msg .label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+    form {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+    }
+    input[type="text"] {
+      flex: 1;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 14px;
+      color: var(--text);
+      font-size: 1rem;
+      outline: none;
+    }
+    input[type="text"]:focus { border-color: var(--accent); }
+    button {
+      background: linear-gradient(180deg, var(--accent), var(--accent2));
+      color: white;
+      border: none;
+      border-radius: 12px;
+      padding: 0 18px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    button.secondary {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--muted);
+    }
+    .hints {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .hints button {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-weight: 500;
+      font-size: 0.8rem;
+      padding: 6px 10px;
+      border-radius: 999px;
+    }
+    footer {
+      margin-top: 16px;
+      color: var(--muted);
+      font-size: 0.8rem;
+      text-align: center;
+    }
+    a { color: #7dd3fc; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div>
+        <h1>JobPay Agent</h1>
+        <div class="sub">Hire a gig worker → draft PayPal payout → confirm → send (sandbox)</div>
+      </div>
+      <div id="mode" class="badge dry">checking…</div>
+    </header>
+
+    <div id="chat" aria-live="polite"></div>
+
+    <form id="form">
+      <input id="input" type="text" placeholder='Pay Jane $50 for the lawn job at jane@example.com' autocomplete="off" />
+      <button type="submit" id="send">Send</button>
+      <button type="button" class="secondary" id="reset">Reset</button>
+    </form>
+
+    <div class="hints">
+      <button type="button" data-q="Pay Jane $50 for the lawn job at jane@example.com">Example payout</button>
+      <button type="button" data-q="confirm">Confirm</button>
+      <button type="button" data-q="cancel">Cancel</button>
+      <button type="button" data-q="status">Check status</button>
+    </div>
+
+    <footer>
+      PayPal AI Hackathon 2026 · Best Use of Agentic Commerce ·
+      <a href="https://github.com/godbody4040-oss/JobPay-Agent" target="_blank" rel="noreferrer">GitHub</a>
+      · MIT
+    </footer>
+  </div>
+
+  <script>
+    const sessionId = crypto.randomUUID();
+    const chat = document.getElementById("chat");
+    const form = document.getElementById("form");
+    const input = document.getElementById("input");
+    const sendBtn = document.getElementById("send");
+    const mode = document.getElementById("mode");
+
+    function addMsg(role, content) {
+      const el = document.createElement("div");
+      el.className = "msg " + role;
+      el.innerHTML = `<div class="label">${role === "user" ? "You" : "JobPay Agent"}</div>`;
+      const body = document.createElement("div");
+      body.textContent = content;
+      el.appendChild(body);
+      chat.appendChild(el);
+      chat.scrollTop = chat.scrollHeight;
+    }
+
+    async function refreshHealth() {
+      try {
+        const r = await fetch("/health");
+        const j = await r.json();
+        if (j.paypalCredentials) {
+          mode.textContent = "sandbox live";
+          mode.className = "badge ok";
+        } else {
+          mode.textContent = "dry-run";
+          mode.className = "badge dry";
+        }
+      } catch {
+        mode.textContent = "offline";
+      }
+    }
+
+    async function send(text) {
+      const message = text.trim();
+      if (!message) return;
+      addMsg("user", message);
+      input.value = "";
+      sendBtn.disabled = true;
+      try {
+        const r = await fetch("/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message, sessionId }),
+        });
+        const j = await r.json();
+        if (!r.ok) throw new Error(j.error || "Request failed");
+        addMsg("assistant", j.reply);
+      } catch (e) {
+        addMsg("assistant", "Error: " + e.message);
+      } finally {
+        sendBtn.disabled = false;
+        input.focus();
+      }
+    }
+
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      send(input.value);
+    });
+
+    document.getElementById("reset").addEventListener("click", async () => {
+      await fetch("/api/reset", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sessionId }),
+      });
+      chat.innerHTML = "";
+      addMsg("assistant", "Session reset. Try: Pay Jane $50 for the lawn job at jane@example.com");
+    });
+
+    document.querySelectorAll(".hints button").forEach((btn) => {
+      btn.addEventListener("click", () => send(btn.dataset.q));
+    });
+
+    refreshHealth();
+    addMsg(
+      "assistant",
+      "Hi — I'm JobPay Agent.\n\nTry: \"Pay Jane $50 for the lawn job at jane@example.com\"\nI'll draft a PayPal payout and wait for your confirm before sending."
+    );
+  </script>
+</body>
+</html>
