@@ -146,3 +146,16 @@ describe("PayPal safety", () => {
     expect(i.primary_recipients[0]!.billing_info.email_address).toBe("c@d.co");
   });
 });
+
+describe("public demo lock", () => {
+  test("JOBPAY_FORCE_DRY_RUN ignores credentials", () => {
+    process.env.PAYPAL_CLIENT_ID = "x";
+    process.env.PAYPAL_CLIENT_SECRET = "y";
+    process.env.JOBPAY_FORCE_DRY_RUN = "true";
+    expect(pp.hasCredentials()).toBe(false);
+    expect(pp.getConfig()).toBeNull();
+    delete process.env.PAYPAL_CLIENT_ID;
+    delete process.env.PAYPAL_CLIENT_SECRET;
+    delete process.env.JOBPAY_FORCE_DRY_RUN;
+  });
+});

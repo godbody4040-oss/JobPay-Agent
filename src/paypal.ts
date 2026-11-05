@@ -36,7 +36,13 @@ export interface ApiResult<T = any> {
   data: T;
 }
 
+/** Public demos set JOBPAY_FORCE_DRY_RUN=true: credentials are ignored and no PayPal call is ever made. */
+export function forcedDryRun(): boolean {
+  return /^(1|true|yes)$/i.test(process.env.JOBPAY_FORCE_DRY_RUN?.trim() || "");
+}
+
 export function hasCredentials(): boolean {
+  if (forcedDryRun()) return false;
   return Boolean(process.env.PAYPAL_CLIENT_ID?.trim() && process.env.PAYPAL_CLIENT_SECRET?.trim());
 }
 

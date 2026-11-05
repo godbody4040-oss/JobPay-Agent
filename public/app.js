@@ -195,8 +195,10 @@ function renderSide() {
 
   const mp = $("#modePill");
   mp.className = "pill " + (m.dryRun ? "dry" : "live");
-  mp.textContent = m.dryRun ? "Dry-run · no keys" : "PayPal sandbox · live";
-  $("#plannerPill").textContent = m.planner && m.planner !== "offline" ? m.planner.replace("llm:", "LLM · ") : "Offline planner";
+  mp.textContent = m.publicDemo ? "Public demo · dry-run" : m.dryRun ? "Dry-run · no keys" : "PayPal sandbox · live";
+  mp.title = m.publicDemo ? "This hosted demo never calls PayPal: every request body is real, nothing is sent." : "";
+  $("#plannerPill").textContent = m.planner && m.planner !== "offline" ? m.planner.replace("llm:", "LLM · ") : "Rule-based planner";
+  $("#plannerPill").title = m.planner && m.planner !== "offline" ? "LLM tool-calling with rule-based fallback" : "No language model is configured; a deterministic rule-based parser plans the tools.";
 
   // crew
   const earned = {};

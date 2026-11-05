@@ -3,7 +3,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { cancelAction, confirmAction, executedLine, handleMessage, refreshStatuses, HELP } from "./agent.ts";
 import { getSession, resetSession, snapshot } from "./ledger.ts";
-import { hasCredentials, paypalMode } from "./paypal.ts";
+import { forcedDryRun, hasCredentials, paypalMode } from "./paypal.ts";
 import { limits } from "./policy.ts";
 import { llmLabel } from "./llm.ts";
 import { TOOLS } from "./tools.ts";
@@ -39,6 +39,7 @@ function meta() {
     paypalCredentials: hasCredentials(),
     mode: paypalMode(),
     dryRun: !hasCredentials(),
+    publicDemo: forcedDryRun(),
     planner: llmLabel() ? `llm:${llmLabel()}` : "offline",
     limits: limits(),
   };
