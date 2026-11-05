@@ -1,0 +1,16 @@
+name: ci
+on: [push, pull_request]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - run: bun run typecheck
+      - run: bun test
+      - name: Boot + health (dry-run)
+        run: |
+          PORT=3000 bun run src/index.ts & sleep 2
+          curl -fsS http://localhost:3000/health
+          curl -fsS -X POST localhost:3000/api/chat -H 'content-type: application/json' -d '{"sessionId":"ci","message":"load demo crew"}' > /dev/null

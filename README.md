@@ -6,6 +6,8 @@
 
 ![JobPay Agent, desktop](docs/screenshot-desktop.png)
 
+<p align="center"><img src="docs/screenshot-drafts.png" width="62%" alt="Policy-checked draft cards"> <img src="docs/screenshot-mobile.png" width="26%" alt="Mobile"></p>
+
 ---
 
 ## The problem

@@ -6,7 +6,7 @@ let grid = null;
 let busy = false;
 
 const fmt = (n) => "$" + Number(n || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-const fmt0 = (n) => "$" + Number(n || 0).toLocaleString("en-US", { maximumFractionDigits: 0 });
+const fmt0 = (n) => (n < 0 ? "−$" : "$") + Math.abs(Number(n || 0)).toLocaleString("en-US", { maximumFractionDigits: 0 });
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 const time = (ts) => new Date(ts).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
 const KIND = { payout: "Payout · PayPal Payouts", invoice: "Invoice · PayPal Invoicing", payment_link: "Payment link · PayPal Checkout", capture: "Capture · PayPal Orders" };
@@ -271,7 +271,7 @@ function renderGrid() {
       grid = agGrid.createGrid(el, {
         theme,
         rowData: data,
-        pinnedBottomRowData: [{ type: "net", party: "Net cash (sent)", amount: net }],
+        pinnedBottomRowData: [{ type: "Net", party: "billed − paid", amount: net }],
         animateRows: true,
         overlayNoRowsTemplate: '<span style="color:#8f8778">Payouts, invoices and payment links land here.</span>',
         defaultColDef: { sortable: true, resizable: true, filter: false, minWidth: 70 },
@@ -294,7 +294,7 @@ function renderGrid() {
       });
     } else {
       grid.setGridOption("rowData", data);
-      grid.setGridOption("pinnedBottomRowData", [{ type: "net", party: "Net cash (sent)", amount: net }]);
+      grid.setGridOption("pinnedBottomRowData", [{ type: "Net", party: "billed − paid", amount: net }]);
     }
     return;
   }
