@@ -2,6 +2,8 @@
 
 **One line:** A home-service owner describes a finished job in one sentence. JobPay Agent works out the worker's pay and the margin, then pays the worker through **PayPal Payouts** and bills the customer through **PayPal Invoicing or Checkout**, but only after a policy check and the owner's tap.
 
+**Demo video (2:18, Public):** https://youtu.be/vkgdTuuArLY · **Live dry-run:** https://jobpay-agent.onrender.com
+
 ## Run it (under 5 minutes)
 
 ```bash

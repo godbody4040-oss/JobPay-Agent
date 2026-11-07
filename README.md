@@ -2,7 +2,7 @@
 
 **The AI back office for home-service crews. You describe a finished job in plain English. The agent pays your worker with PayPal Payouts and bills your customer with PayPal Invoicing or Checkout. Every dollar is policy-checked and human-approved.**
 
-> PayPal AI Hackathon 2026 · MIT · **Live demo (public, dry-run): https://jobpay-agent.onrender.com** · runs offline in dry-run, against the PayPal **sandbox** with your app keys, and with a free local LLM (Qwen2.5-3B via llama.cpp) for AI planning.
+> PayPal AI Hackathon 2026 · MIT · **Live demo (public, dry-run): https://jobpay-agent.onrender.com** · **[Demo video (2:18)](https://youtu.be/vkgdTuuArLY)** · runs offline in dry-run, against the PayPal **sandbox** with your app keys, and with a free local LLM (Qwen2.5-3B via llama.cpp) for AI planning.
 
 ![JobPay Agent, desktop](docs/screenshot-desktop.png)
 
@@ -224,7 +224,7 @@ POST /api/reset       {sessionId}
 - [x] Tools disclosed: PayPal REST APIs, Qwen2.5-3B-Instruct (open weights, Apache-2.0) via llama.cpp, an OpenAI-compatible tool-calling interface, Bun, Express and AG Grid Community
 - [x] Public repo, MIT license
 - [x] Free Render deploy, live at https://jobpay-agent.onrender.com (public, dry-run locked)
-- [ ] Demo video under 3 minutes on YouTube (script in [JUDGES.md](JUDGES.md))
+- [x] Demo video under 3 minutes on YouTube: **[2:18 demo](https://youtu.be/vkgdTuuArLY)** (Public, channel God Body; script in [JUDGES.md](JUDGES.md))
 
 ## Sponsor tools
 

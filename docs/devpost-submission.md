@@ -4,6 +4,10 @@
 
 **Tagline:** Close out a job in one sentence. AI pays your crew with PayPal Payouts and bills your customer with PayPal, and you approve every dollar.
 
+**Demo video (YouTube, Public, 2:18):** https://youtu.be/vkgdTuuArLY
+
+**GitHub:** https://github.com/godbody4040-oss/JobPay-Agent
+
 ## Inspiration
 Home-service owners such as plumbers, cleaners and handymen end every day with the same chores: work out what each contractor is owed, pay them fast, bill the customer, and wonder whether the job made money. Those chores are spread across texts, a spreadsheet and several PayPal tabs. We wanted one sentence to do all of it, safely.
 
